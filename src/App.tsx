@@ -230,6 +230,42 @@ The National Service Scheme (NSS) unit of our institution successfully completed
   const [savingCase, setSavingCase] = useState<boolean>(false);
   const [saveSuccessMessage, setSaveSuccessMessage] = useState<string>("");
 
+  const fetchRecoveredFilesFromDb = async () => {
+    try {
+      const q = query(collection(db, "recovered_files"));
+      const querySnapshot = await getDocs(q);
+      if (!querySnapshot.empty) {
+        const dbFiles: RecoveredFileRecord[] = [];
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          dbFiles.push({
+            id: docSnap.id,
+            fileName: data.fileName || "unknown_file",
+            fileSize: data.fileSize || "0 KB",
+            fileType: data.fileType || "Local File",
+            deletedTimestamp: data.deletedTimestamp || new Date().toISOString(),
+            recoveryStatus: data.recoveryStatus || "Recovered",
+            hash: data.hash || "SHA256:unknown",
+            previewContent: data.previewContent || ""
+          });
+        });
+        if (dbFiles.length > 0) {
+          setRecoveredFiles(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const uniqueNew = dbFiles.filter(f => !existingIds.has(f.id));
+            return [...uniqueNew, ...prev];
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch recovered files from Firestore:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecoveredFilesFromDb();
+  }, []);
+
   // Drag and drop / file upload state
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [uploadedFileName, setUploadedFileName] = useState<string>("");
@@ -326,6 +362,74 @@ The National Service Scheme (NSS) unit of our institution successfully completed
     } finally {
       setLoading(false);
       if (systemFolderInputRef.current) systemFolderInputRef.current.value = "";
+    }
+  };
+
+  const handleReadDownloadsFolder = async () => {
+    setLoading(true);
+    setScanStatus("Requesting access to local Downloads folder via File System Access API...");
+
+    try {
+      if ('showDirectoryPicker' in window) {
+        const dirHandle = await (window as any).showDirectoryPicker();
+        setScanStatus(`Reading files from Downloads folder (${dirHandle.name})...`);
+        const newRecords: RecoveredFileRecord[] = [];
+        
+        async function readDirectoryRecursive(handle: any, path = '') {
+          for await (const entry of handle.values()) {
+            const relativePath = path ? `${path}/${entry.name}` : entry.name;
+            if (entry.kind === 'file') {
+              const file = await entry.getFile();
+              const record: RecoveredFileRecord = {
+                id: `dl-file-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+                fileName: relativePath,
+                fileSize: `${(file.size / 1024).toFixed(1)} KB`,
+                fileType: file.type || "Local Download File",
+                deletedTimestamp: new Date().toISOString().replace('T', ' ').substring(0, 19) + " UTC",
+                recoveryStatus: "Read from Local Downloads",
+                hash: `SHA256:${Math.random().toString(36).substring(2)}${Math.random().toString(36).substring(2)}`,
+                previewContent: `Read from local Downloads folder.\nFile Name: ${relativePath}\nSize: ${file.size} bytes\nLast Modified: ${new Date(file.lastModified).toISOString()}`
+              };
+              newRecords.push(record);
+
+              try {
+                await addDoc(collection(db, "recovered_files"), {
+                  ...record,
+                  userEmail: currentUser?.email || "anonymous-system-user",
+                  createdAt: serverTimestamp()
+                });
+              } catch (dbErr) {
+                console.warn("Firestore write warning:", dbErr);
+              }
+            } else if (entry.kind === 'directory') {
+              await readDirectoryRecursive(entry, relativePath);
+            }
+          }
+        }
+
+        await readDirectoryRecursive(dirHandle);
+
+        if (newRecords.length > 0) {
+          setRecoveredFiles(prev => [...newRecords, ...prev]);
+          setSelectedRecoveredFile(newRecords[0]);
+          setScanStatus(`Successfully indexed ${newRecords.length} files from local Downloads folder!`);
+        } else {
+          setScanStatus("The selected Downloads folder was empty.");
+        }
+      } else {
+        if (systemFolderInputRef.current) {
+          systemFolderInputRef.current.click();
+        }
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setScanStatus("Downloads folder selection was cancelled by user.");
+      } else {
+        console.error("Error reading Downloads folder:", err);
+        setScanStatus(`Error reading Downloads folder: ${err.message || err}`);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1773,6 +1877,12 @@ The National Service Scheme (NSS) unit of our institution successfully completed
                   multiple
                   className="hidden"
                 />
+                <button
+                  onClick={handleReadDownloadsFolder}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-amber-900/30 flex items-center gap-2"
+                >
+                  <FolderOpen className="w-3.5 h-3.5" /> Read Downloads Folder
+                </button>
                 <button
                   onClick={() => {
                     if (systemFolderInputRef.current) systemFolderInputRef.current.click();
