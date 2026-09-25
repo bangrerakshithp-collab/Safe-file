@@ -1,0 +1,35 @@
+# 1. Authenticate once (opens browser)
+gcloud auth login
+
+# 2. Set your project
+gcloud config set project YOUR_PROJECT_ID
+
+# 3. Enable Email/Password sign-in via REST API
+curl -X PATCH \
+  "https://identitytoolkit.googleapis.com/admin/v2/projects/YOUR_PROJECT_ID/config?updateMask=signIn.email" \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "signIn": {
+      "email": {
+        "enabled": true,
+        "passwordRequired": true
+      }
+    }
+  }'
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+
+const auth = getAuth();
+
+async function signIn(email, password) {
+  try {
+    const { user } = await signInWithEmailAndPassword(auth, email, password);
+    return user;
+  } catch (error) {
+    if (error.code === "auth/operation-not-allowed") {
+      console.error("This sign-in method is disabled in Firebase Console → Authentication → Sign-in method.");
+    } else {
+      console.error(error.code, error.message);
+    }
+  }
+}
