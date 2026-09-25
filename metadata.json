@@ -1,0 +1,6 @@
+{
+  "name": "Safe File // Intelligent Data Recovery & Reconstruction Console",
+  "description": "AI-assisted data recovery and forensic reconstruction solution for analyzing fragmented file chunks, assessing integrity, classifying artifacts, and providing investigative decision support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

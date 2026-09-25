@@ -1,0 +1,25 @@
+{
+  "entities": {
+    "ForensicCase": {
+      "title": "ForensicCase",
+      "description": "Recovered forensic case record",
+      "type": "object",
+      "properties": {
+        "caseName": { "type": "string" },
+        "dumpType": { "type": "string" },
+        "healthScore": { "type": "number" },
+        "fragmentsCount": { "type": "number" },
+        "evidentiaryScore": { "type": "number" },
+        "userEmail": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["caseName", "dumpType", "healthScore", "fragmentsCount"]
+    }
+  },
+  "firestore": {
+    "/forensic_cases/{caseId}": {
+      "schema": { "$ref": "#/entities/ForensicCase" },
+      "description": "Stored forensic cases collection"
+    }
+  }
+}
