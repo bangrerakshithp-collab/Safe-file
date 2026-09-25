@@ -1,0 +1,48 @@
+import { 
+  getAuth, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword 
+} from "firebase/auth";
+
+const auth = getAuth();
+
+async function signUp(email, password) {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    console.log("User created:", userCredential.user);
+    return userCredential.user;
+  } catch (error) {
+    handleAuthError(error);
+  }
+}
+
+async function signIn(email, password) {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    console.log("Signed in:", userCredential.user);
+    return userCredential.user;
+  } catch (error) {
+    handleAuthError(error);
+  }
+}
+
+function handleAuthError(error) {
+  switch (error.code) {
+    case "auth/operation-not-allowed":
+      console.error(
+        "Sign-in method not enabled. Go to Firebase Console → Authentication → Sign-in method, and enable this provider."
+      );
+      break;
+    case "auth/email-already-in-use":
+      console.error("This email is already registered.");
+      break;
+    case "auth/invalid-email":
+      console.error("Invalid email format.");
+      break;
+    case "auth/weak-password":
+      console.error("Password should be at least 6 characters.");
+      break;
+    default:
+      console.error("Auth error:", error.code, error.message);
+  }
+}
