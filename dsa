@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Login</title>
+
+  <style>
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+    }
+
+    .login-box {
+      width: 320px;
+      padding: 30px;
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+
+    .login-box h2 {
+      margin-bottom: 25px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #667eea;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .login-box button:hover {
+      background: #5568d8;
+    }
+
+    #error {
+      color: red;
+      margin-top: 15px;
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-box">
+    <h2>Login</h2>
+
+    <input
+      type="password"
+      id="password"
+      placeholder="Enter password"
+    >
+
+    <button onclick="login()">Login</button>
+
+    <p id="error">Incorrect password</p>
+  </div>
+
+  <script>
+    // Change this password
+    const correctPassword = "123456";
+
+    function login() {
+      const password = document.getElementById("password").value;
+      const error = document.getElementById("error");
+
+      if (password === correctPassword) {
+        // Login successful
+        window.location.href = "dashboard.html";
+      } else {
+        // Login failed
+        error.style.display = "block";
+      }
+    }
+
+    // Allow Enter key to login
+    document.getElementById("password").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        login();
+      }
+    });
+  </script>
+
+</body>
+</html>
